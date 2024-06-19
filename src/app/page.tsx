@@ -26,7 +26,7 @@ export default function Home() {
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const [currentColor, setCurrentColor] = useState<string>("");
 
-    const handleMouseDown = (e: MouseEvent<HTMLDivElement>): void => {
+    const handleMouseDown = (e: MouseEvent<HTMLDivElement> | TouchEvent): void => {
         if (e.target instanceof HTMLButtonElement || (e.target as HTMLInputElement).type === 'radio') {
             return;
         }
@@ -36,7 +36,7 @@ export default function Home() {
         addShape(e, color);
     };
 
-    const handleMouseMove = (e: MouseEvent<HTMLDivElement>): void => {
+    const handleMouseMove = (e: MouseEvent<HTMLDivElement> | TouchEvent): void => {
         if (!isDrawing) return;
         addShape(e, currentColor);
     };
@@ -45,10 +45,17 @@ export default function Home() {
         setIsDrawing(false);
     };
 
-    const addShape = (e: MouseEvent<HTMLDivElement>, color: string): void => {
+    const addShape = (e: MouseEvent<HTMLDivElement> | TouchEvent, color: string): void => {
         const shapeSize = 25;
-        const x = Math.max(shapeSize, Math.min(e.clientX, window.innerWidth - shapeSize));
-        const y = Math.max(shapeSize, Math.min(e.clientY, window.innerHeight - shapeSize));
+        let x, y;
+        if ('touches' in e) {
+            x = Math.max(shapeSize, Math.min(e.touches[0].clientX, window.innerWidth - shapeSize));
+            y = Math.max(shapeSize, Math.min(e.touches[0].clientY, window.innerHeight - shapeSize));
+        } else {
+            x = Math.max(shapeSize, Math.min(e.clientX, window.innerWidth - shapeSize));
+            y = Math.max(shapeSize, Math.min(e.clientY, window.innerHeight - shapeSize));
+        }
+
 
         const newShape: Shape = {
             id: shapes.length,
@@ -71,8 +78,10 @@ export default function Home() {
 
     useEffect(() => {
         window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('touchend', handleMouseUp);
         return () => {
             window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchend', handleMouseUp);
         };
     }, []);
 
@@ -135,6 +144,14 @@ export default function Home() {
                 className="w-full h-full pt-20"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
+                onTouchStart={(e) => {
+                    e.preventDefault();
+                    handleMouseDown(e as unknown as MouseEvent<HTMLDivElement>);
+                }}
+                onTouchMove={(e) => {
+                    e.preventDefault();
+                    handleMouseMove(e as unknown as MouseEvent<HTMLDivElement>);
+                }}
             >
             {shapes.map(shape => (
                 <motion.div
