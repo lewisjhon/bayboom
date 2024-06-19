@@ -1,6 +1,6 @@
 "use client"
 
-import {useState, MouseEvent, ChangeEvent} from "react";
+import {useState, MouseEvent, ChangeEvent, useEffect} from "react";
 import { motion } from "framer-motion";
 
 interface Shape {
@@ -23,16 +23,41 @@ const getRandomColor = (): string => {
 export default function Home() {
     const [shapes, setShapes] = useState<Shape[]>([]);
     const [selectedShape, setSelectedShape] = useState<string>("circle");
+    const [isDrawing, setIsDrawing] = useState<boolean>(false);
+    const [currentColor, setCurrentColor] = useState<string>("");
 
-    const handleClick = (e: MouseEvent<HTMLDivElement>): void => {
+    const handleMouseDown = (e: MouseEvent<HTMLDivElement>): void => {
+        if (e.target instanceof HTMLButtonElement || (e.target as HTMLInputElement).type === 'radio') {
+            return;
+        }
+        setIsDrawing(true);
+        const color = getRandomColor();
+        setCurrentColor(color);
+        addShape(e, color);
+    };
+
+    const handleMouseMove = (e: MouseEvent<HTMLDivElement>): void => {
+        if (!isDrawing) return;
+        addShape(e, currentColor);
+    };
+
+    const handleMouseUp = (): void => {
+        setIsDrawing(false);
+    };
+
+    const addShape = (e: MouseEvent<HTMLDivElement>, color: string): void => {
+        const shapeSize = 25;
+        const x = Math.max(shapeSize, Math.min(e.clientX, window.innerWidth - shapeSize));
+        const y = Math.max(shapeSize, Math.min(e.clientY, window.innerHeight - shapeSize));
+
         const newShape: Shape = {
             id: shapes.length,
-            x: e.clientX,
-            y: e.clientY,
-            color: getRandomColor(),
+            x: x,
+            y: y,
+            color: color,
             type: selectedShape,
         };
-        setShapes([...shapes, newShape]);
+        setShapes(prevShapes => [...prevShapes, newShape]);
     };
 
     const handleReset = (): void => {
@@ -40,11 +65,19 @@ export default function Home() {
     };
 
     const handleShapeChange = (e: ChangeEvent<HTMLInputElement>): void => {
+        e.stopPropagation();
         setSelectedShape(e.target.value);
     };
 
+    useEffect(() => {
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, []);
+
     return (
-        <div className="relative w-screen h-screen overflow-hidden bg-blue-100" onClick={handleClick}>
+        <div className="relative w-screen h-screen overflow-hidden bg-blue-100">
             <div className="absolute top-4 left-4 flex space-x-2">
                 <button
                     className="px-4 py-2 bg-blue-500 text-white rounded"
@@ -98,6 +131,11 @@ export default function Home() {
                     </label>
                 </div>
             </div>
+            <div
+                className="w-full h-full pt-20"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+            >
             {shapes.map(shape => (
                 <motion.div
                     key={shape.id}
@@ -113,6 +151,7 @@ export default function Home() {
                     transition={{duration: 0.6, type: "spring", stiffness: 200}}
                 />
             ))}
+            </div>
         </div>
     );
 }

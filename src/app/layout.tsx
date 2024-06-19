@@ -41,7 +41,7 @@ export default function RootLayout({
         <meta property="og:title" content="베이붐"/>
         <meta
             property="og:description"
-            content="우리 아치 터치 놀이 앱"
+            content="우리 아기 터치 놀이 앱"
         />
         <title>베이붐</title>
       </head>
